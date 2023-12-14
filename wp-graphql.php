@@ -21,6 +21,8 @@
  * @version  1.19.0
  */
 
+use WPGraphQL\Utils\QueryAnalyzer;
+
 // Exit if accessed directly.
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -182,3 +184,21 @@ function graphql_init_appsero_telemetry() {
 }
 
 graphql_init_appsero_telemetry();
+
+add_filter(
+	'graphql_process_http_request_response',
+	static function ( $response, $result, $operation, $request ) {
+		$nodesResolved = QueryAnalyzer::areNodesResolved();
+
+		if ( ! $nodesResolved ) {
+			header( 'Cache-Control: no-cache, must-revalidate' );
+		}
+
+		// Correctly reset nodes_resolved for the next request.
+		QueryAnalyzer::resetNodesResolved();
+
+		return $response;
+	},
+	10,
+	4
+);
